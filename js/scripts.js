@@ -26,6 +26,11 @@ document.addEventListener('DOMContentLoaded', function () {
   clearCartBtn.addEventListener('click', function () {
     // Clear the productList in localStorage
     localStorage.removeItem('productList');
+    updateCartTotalItem()
+    updateCartTotalPrice()
+    const container = document.getElementById('cartProductItemContainer');
+    container.innerHTML = '<div class="text-center">Cart is empty</div>';
+
   });
 });
 
@@ -117,7 +122,7 @@ function updateCartTotalPrice() {
   const cartTotalPrice = document.getElementById('cartTotalPrice');
 
   // Update the content of the cartTotalPrice element
-  cartTotalPrice.textContent = totalPrice // Assuming prices are in decimals
+  cartTotalPrice.textContent = "Total: $" + totalPrice; // Assuming prices are in decimals
 }
 
 function createCard(product) {
@@ -192,7 +197,7 @@ function createCard(product) {
   const card = document.querySelector('#products');
   card.appendChild(cardDiv);
 };
-
+/*
 document.addEventListener('DOMContentLoaded', function () {
   updateCartTotalPrice();
   updateCartTotalItem()
@@ -218,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Create elements for the card
     const colDiv = document.createElement('div');
-    colDiv.classList.add('col');
+    colDiv.classList.add('row');
 
     const cardDiv = document.createElement('div');
     cardDiv.classList.add('list-group-item', 'mb-4', 'shadow-sm', 'd-flex');
@@ -239,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const price = document.createElement('p');
     price.classList.add('card-text');
-    price.innerHTML = `<strong>Price:</strong> $${productDetails.price}`;
+    price.innerHTML = `<strong>Price:</strong> $${(productDetails.price * productQuantityMap.get(productId))}`;
 
     const quantityContainer = document.createElement('div');
     quantityContainer.classList.add('card-text');
@@ -257,6 +262,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Update productList and localStorage
         updateLocalStorage(productList, productId);
         // Update cart total price and total item
+        price.innerHTML = `<strong>Price:</strong> $${(productDetails.price * productQuantityMap.get(productId))}`;
         updateCartTotalPrice();
         updateCartTotalItem();
       } else {
@@ -287,6 +293,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Update the quantity text
       quantityText.textContent = productQuantityMap.get(productId);
       // Update cart total price and total item
+      price.innerHTML = `<strong>Price:</strong> $${(productDetails.price * productQuantityMap.get(productId))}`;
       updateCartTotalPrice();
       updateCartTotalItem();
     });
@@ -310,6 +317,125 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Append colDiv to the container
     container.appendChild(colDiv);
+  });
+});*/
+
+document.addEventListener('DOMContentLoaded', function () {
+  updateCartTotalPrice();
+  updateCartTotalItem();
+  
+  // Retrieve productList from localStorage
+  const productList = JSON.parse(localStorage.getItem('productList')) || [];
+
+  // Create a map to track the quantity of each product
+  const productQuantityMap = new Map();
+
+  // Update the quantity map based on the productList
+  productList.forEach(product => {
+    const productId = product.id;
+    productQuantityMap.set(productId, (productQuantityMap.get(productId) || 0) + 1);
+  });
+
+  // Select the container where the cards will be appended
+  const container = document.getElementById('cartProductItemContainer');
+
+  // Iterate over each product in the quantity map
+  productQuantityMap.forEach((quantity, productId) => {
+    // Find the product details corresponding to the productId
+    const productDetails = productList.find(product => product.id === productId);
+
+    // Create elements for the card
+    const cardDiv = document.createElement('div');
+    cardDiv.classList.add('card', 'border-0', 'shadow', 'mb-4');
+
+    const cardBodyDiv = document.createElement('div');
+    cardBodyDiv.classList.add('card-body', 'd-flex', 'align-items-center');
+
+    const img = document.createElement('img');
+    img.classList.add('card-img-top', 'me-3');
+    img.src = productDetails.image;
+    img.alt = 'Product Image';
+    img.style.width = "100px"; // Adjust image width as needed
+
+    const title = document.createElement('h5');
+    title.classList.add('card-title', 'flex-grow-1', 'mb-0');
+    title.textContent = productDetails.title;
+
+    const price = document.createElement('p');
+    price.classList.add('card-text', 'fw-bold', 'mb-0', 'ms-auto');
+    price.innerHTML = `<strong>Price:</strong> $${(productDetails.price * productQuantityMap.get(productId)).toFixed(2)}`;
+
+    const quantityContainer = document.createElement('div');
+    quantityContainer.classList.add('text-center', 'ms-auto');
+
+    // Update the decrease button event listener
+    const decreaseBtn = document.createElement('button');
+    decreaseBtn.textContent = '-';
+    decreaseBtn.classList.add('btn', 'btn-primary', 'me-2');
+    decreaseBtn.addEventListener('click', () => {
+      if (productQuantityMap.get(productId) > 1) {
+        // Update productQuantityMap
+        productQuantityMap.set(productId, productQuantityMap.get(productId) - 1);
+        // Update the quantity text
+        quantityText.textContent = productQuantityMap.get(productId);
+        // Update productList and localStorage
+        updateLocalStorage(productList, productId);
+        // Update cart total price and total item
+        price.innerHTML = `<strong>Price:</strong> $${(productDetails.price * productQuantityMap.get(productId)).toFixed(2)}`;
+        updateCartTotalPrice();
+        updateCartTotalItem();
+      } else {
+        // Remove the product card entirely
+        cardDiv.remove();
+        // Remove the product from the productList and localStorage
+        const index = productList.findIndex(product => product.id === productId);
+        if (index !== -1) {
+          productList.splice(index, 1);
+          localStorage.setItem('productList', JSON.stringify(productList));
+          // Update cart total price and total item
+          updateCartTotalPrice();
+          updateCartTotalItem();
+        }
+      }
+    });
+
+    // Update the increase button event listener
+    const increaseBtn = document.createElement('button');
+    increaseBtn.textContent = '+';
+    increaseBtn.classList.add('btn', 'btn-primary');
+    increaseBtn.addEventListener('click', () => {
+      productList.push(productDetails);
+      // Update localStorage
+      localStorage.setItem('productList', JSON.stringify(productList));
+      // Update productQuantityMap
+      productQuantityMap.set(productId, productQuantityMap.get(productId) + 1);
+      // Update the quantity text
+      quantityText.textContent = productQuantityMap.get(productId);
+      // Update cart total price and total item
+      price.innerHTML = `<strong>Price:</strong> $${(productDetails.price * productQuantityMap.get(productId)).toFixed(2)}`;
+      updateCartTotalPrice();
+      updateCartTotalItem();
+    });
+
+    // Create the quantity text element
+    const quantityText = document.createElement('span');
+    quantityText.textContent = quantity;
+
+    quantityContainer.appendChild(decreaseBtn);
+    quantityContainer.appendChild(quantityText);
+    quantityContainer.appendChild(increaseBtn);
+
+    // Append elements to the cardBodyDiv
+    cardBodyDiv.appendChild(img);
+    cardBodyDiv.appendChild(title);
+    cardBodyDiv.appendChild(price);
+    cardBodyDiv.appendChild(quantityContainer);
+
+    // Append cardBodyDiv to the cardDiv
+    cardDiv.appendChild(cardBodyDiv);
+
+    // Append cardDiv to the container
+    container.appendChild(cardDiv);
   });
 });
 
